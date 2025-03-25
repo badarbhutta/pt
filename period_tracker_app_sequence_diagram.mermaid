@@ -1,0 +1,172 @@
+sequenceDiagram
+    %% Actors
+    participant Client as Client App
+    participant LB as Load Balancer
+    participant API as Laravel API
+    participant MLAPI as FastAPI ML Engine
+    participant DB as PostgreSQL
+    participant Cache as Redis Cache
+    participant Queue as Job Queue
+    participant Worker as Queue Worker
+    
+    %% User Authentication Flow
+    Note over Client,API: User Authentication Flow
+    Client->>LB: POST /api/v1/auth/login (email, password)
+    LB->>API: Route to Laravel API
+    API->>DB: Validate credentials
+    DB-->>API: User record
+    API->>Cache: Store session data
+    API-->>LB: Return JWT token
+    LB-->>Client: Authentication response
+    
+    %% Cycle Logging Flow
+    Note over Client,DB: Cycle Logging Flow
+    Client->>LB: POST /api/v1/cycles (cycle data)
+    LB->>API: Route to Laravel API
+    API->>API: Validate request data
+    API->>DB: Insert new cycle record
+    DB-->>API: Confirmation
+    API->>Queue: Queue prediction update job
+    API-->>LB: Return success response
+    LB-->>Client: Cycle saved confirmation
+    Queue->>Worker: Process prediction update job
+    Worker->>DB: Fetch user cycle history
+    DB-->>Worker: User cycle data
+    Worker->>MLAPI: Request updated predictions
+    MLAPI->>MLAPI: Generate predictions with models
+    MLAPI-->>Worker: Prediction results
+    Worker->>DB: Store new predictions
+    Worker->>Cache: Invalidate cached predictions
+    Worker->>Client: Send notification (WebSocket/Push)
+    
+    %% Prediction Retrieval Flow
+    Note over Client,MLAPI: Prediction Retrieval Flow
+    Client->>LB: GET /api/v1/predictions/period
+    LB->>API: Route to Laravel API
+    API->>Cache: Check for cached predictions
+    Cache-->>API: Cache miss
+    API->>DB: Fetch latest predictions
+    DB-->>API: Prediction records
+    API->>Cache: Store in cache
+    API-->>LB: Return predictions
+    LB-->>Client: Prediction results
+    
+    %% Symptom Logging Flow
+    Note over Client,DB: Symptom Logging Flow
+    Client->>LB: POST /api/v1/symptoms/log (symptom data)
+    LB->>API: Route to Laravel API
+    API->>API: Validate symptom data
+    API->>DB: Store symptom log
+    DB-->>API: Confirmation
+    API->>Queue: Queue correlation analysis job
+    API-->>LB: Return success response
+    LB-->>Client: Symptom logged confirmation
+    Queue->>Worker: Process correlation job
+    Worker->>DB: Fetch user health data
+    DB-->>Worker: Health data history
+    Worker->>MLAPI: Request symptom correlation analysis
+    MLAPI->>MLAPI: Analyze correlations
+    MLAPI-->>Worker: Correlation results
+    Worker->>DB: Store correlation insights
+    
+    %% ML Model Training Flow
+    Note over API,MLAPI: ML Model Training Flow (Admin Triggered)
+    API->>API: Admin requests model training
+    API->>Queue: Queue training job (high priority)
+    Queue->>Worker: Process training job
+    Worker->>DB: Fetch anonymized training data
+    DB-->>Worker: Training dataset
+    Worker->>MLAPI: Request model training
+    MLAPI->>MLAPI: Preprocess training data
+    MLAPI->>MLAPI: Train ARIMA model
+    MLAPI->>MLAPI: Train Random Forest model
+    MLAPI->>MLAPI: Train Gradient Boosting model
+    MLAPI->>MLAPI: Configure ensemble integrator
+    MLAPI->>MLAPI: Validate models on test data
+    MLAPI->>DB: Store model metrics
+    MLAPI-->>Worker: Training results
+    Worker->>API: Update training status
+    Worker->>Cache: Invalidate model cache
+    
+    %% User-Specific Model Fine-tuning Flow
+    Note over Client,MLAPI: User-Specific Model Fine-tuning
+    Client->>LB: POST /api/v1/predictions/feedback
+    LB->>API: Route to Laravel API
+    API->>DB: Store prediction feedback
+    DB-->>API: Confirmation
+    API->>Queue: Queue model evaluation job
+    API-->>LB: Return success response
+    LB-->>Client: Feedback received confirmation
+    Queue->>Worker: Process model evaluation
+    Worker->>DB: Check feedback volume threshold
+    DB-->>Worker: Feedback count
+    Worker->>MLAPI: Request model fine-tuning (if threshold met)
+    MLAPI->>DB: Fetch user's historical data
+    DB-->>MLAPI: User data
+    MLAPI->>MLAPI: Fine-tune user-specific model
+    MLAPI->>MLAPI: Validate personalized model
+    MLAPI->>DB: Store personalized model if improved
+    MLAPI-->>Worker: Fine-tuning results
+    Worker->>Cache: Update user model reference
+    
+    %% Fertility Window Prediction Flow
+    Note over Client,MLAPI: Fertility Window Prediction Flow
+    Client->>LB: GET /api/v1/predictions/fertility
+    LB->>API: Route to Laravel API
+    API->>Cache: Check for cached fertility predictions
+    Cache-->>API: Cache miss
+    API->>DB: Fetch user's cycle and fertility data
+    DB-->>API: User fertility data
+    API->>MLAPI: Request fertility predictions
+    MLAPI->>MLAPI: Generate fertility window predictions
+    MLAPI-->>API: Fertility prediction results
+    API->>DB: Store fertility predictions
+    API->>Cache: Cache fertility predictions
+    API-->>LB: Return fertility window
+    LB-->>Client: Fertility prediction results
+    
+    %% Health Insights Generation Flow
+    Note over Client,Worker: Health Insights Generation Flow
+    Client->>LB: GET /api/v1/symptoms/correlations
+    LB->>API: Route to Laravel API
+    API->>Cache: Check for cached insights
+    Cache-->>API: Cache miss
+    API->>DB: Fetch user's symptoms and cycle data
+    DB-->>API: Historical data
+    API->>MLAPI: Request health insights analysis
+    MLAPI->>MLAPI: Analyze symptom patterns
+    MLAPI->>MLAPI: Generate correlation insights
+    MLAPI-->>API: Health insights results
+    API->>DB: Store generated insights
+    API->>Cache: Cache insights results
+    API-->>LB: Return health insights
+    LB-->>Client: Health correlation insights
+    
+    %% System Health Monitoring Flow
+    Note over API,DB: System Health Monitoring Flow
+    API->>DB: Query system metrics
+    DB-->>API: System data
+    API->>MLAPI: Request ML system status
+    MLAPI-->>API: ML system metrics
+    API->>API: Generate health report
+    API->>API: Check alert thresholds
+    API->>API: Alert admins if thresholds exceeded
+    
+    %% Data Export Flow
+    Note over Client,DB: Data Export Flow
+    Client->>LB: GET /api/v1/users/export
+    LB->>API: Route to Laravel API
+    API->>Queue: Queue data export job
+    API-->>LB: Return job ID
+    LB-->>Client: Export initiated response
+    Queue->>Worker: Process export job
+    Worker->>DB: Fetch user's data
+    DB-->>Worker: Complete user data
+    Worker->>Worker: Format data according to export type
+    Worker->>Worker: Generate secure download link
+    Worker->>Client: Send export ready notification
+    Client->>LB: GET /api/v1/exports/{id}/download
+    LB->>API: Route to download endpoint
+    API->>API: Validate download token
+    API-->>LB: Return encrypted export file
+    LB-->>Client: Download export file
