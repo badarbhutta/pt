@@ -1,0 +1,399 @@
+classDiagram
+    %% User Management Classes
+    class User {
+        +int id
+        +string name
+        +string email
+        +string password
+        +datetime created_at
+        +datetime updated_at
+        +bool data_sharing_enabled
+        +bool model_personalization_enabled
+        +__construct()
+        +getProfile() array
+        +updateProfile(array data) bool
+        +updateSettings(array settings) bool
+        +getPreferences() array
+    }
+    
+    class UserPreference {
+        +int id
+        +int user_id
+        +string key
+        +string value
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +getValue() mixed
+        +setValue(mixed value) bool
+    }
+    
+    %% Cycle Management Classes
+    class Cycle {
+        +int id
+        +int user_id
+        +date start_date
+        +date end_date
+        +int duration
+        +string notes
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +getDuration() int
+        +isActive() bool
+        +recordEnd(date endDate) bool
+    }
+    
+    class CycleStatistics {
+        +int user_id
+        +float avg_cycle_length
+        +float avg_period_length
+        +float cycle_length_std_dev
+        +int cycle_count
+        +date last_updated
+        +__construct()
+        +updateStatistics() bool
+        +getLastNCycles(int n) array
+    }
+    
+    %% Symptom Tracking Classes
+    class Symptom {
+        +int id
+        +string name
+        +string display_name
+        +string category
+        +string description
+        +bool is_active
+        +__construct()
+        +getCategory() string
+        +activate() void
+        +deactivate() void
+    }
+    
+    class SymptomCategory {
+        +int id
+        +string name
+        +string display_name
+        +string description
+        +__construct()
+        +getSymptoms() array
+    }
+    
+    class SymptomLog {
+        +int id
+        +int user_id
+        +int symptom_id
+        +date log_date
+        +int severity
+        +string notes
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +updateSeverity(int severity) bool
+        +getSymptom() Symptom
+    }
+    
+    %% Biometric and Fertility Tracking Classes
+    class BiometricLog {
+        +int id
+        +int user_id
+        +string type
+        +float value
+        +date log_date
+        +string notes
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +getValue() float
+        +getFormattedValue() string
+    }
+    
+    class FertilityLog {
+        +int id
+        +int user_id
+        +date log_date
+        +string cervical_fluid
+        +bool ovulation_test
+        +int ovulation_test_value
+        +string notes
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +isOvulationPositive() bool
+    }
+    
+    %% Lifestyle Tracking Classes
+    class LifestyleLog {
+        +int id
+        +int user_id
+        +date log_date
+        +string category
+        +string type
+        +float value
+        +string notes
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +getFormattedValue() string
+    }
+    
+    %% Prediction Classes
+    class Prediction {
+        +int id
+        +int user_id
+        +string type
+        +date target_date
+        +float confidence_score
+        +int model_version_id
+        +boolean confirmed
+        +date actual_date
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +getError() int
+        +getConfidenceLevel() string
+        +confirmAccuracy(date actualDate) bool
+    }
+    
+    class PredictionFeedback {
+        +int id
+        +int prediction_id
+        +int user_id
+        +boolean accurate
+        +int error_days
+        +string notes
+        +datetime created_at
+        +__construct()
+        +isAccurate() bool
+    }
+    
+    %% Machine Learning Classes
+    class MLModel {
+        +int id
+        +string name
+        +string type
+        +string version
+        +bool is_active
+        +bool is_global
+        +int user_id
+        +float accuracy
+        +string file_path
+        +datetime trained_at
+        +datetime created_at
+        +__construct()
+        +activate() bool
+        +deactivate() bool
+        +getMetrics() array
+    }
+    
+    class MLModelMetrics {
+        +int id
+        +int model_id
+        +float mae
+        +float rmse
+        +float accuracy
+        +int sample_size
+        +datetime created_at
+        +__construct()
+        +compareWith(MLModelMetrics other) bool
+    }
+    
+    class MLModelTrainingJob {
+        +int id
+        +string status
+        +string model_type
+        +bool is_global
+        +int user_id
+        +datetime started_at
+        +datetime completed_at
+        +string error_message
+        +__construct()
+        +markComplete() bool
+        +markFailed(string error) bool
+        +isComplete() bool
+    }
+    
+    %% Admin and Monitoring Classes
+    class AdminUser {
+        +int id
+        +string name
+        +string email
+        +string password
+        +string role
+        +datetime created_at
+        +datetime updated_at
+        +__construct()
+        +hasPermission(string permission) bool
+    }
+    
+    class SystemMetric {
+        +int id
+        +string metric_name
+        +float value
+        +string units
+        +datetime recorded_at
+        +__construct()
+        +getFormattedValue() string
+    }
+    
+    %% API Classes
+    class APIController {
+        +respond(data, status) Response
+        +error(message, code) Response
+        +paginate(query, perPage) PaginatedResponse
+    }
+    
+    class UserController {
+        +register(Request request) Response
+        +login(Request request) Response
+        +getProfile(Request request) Response
+        +updateProfile(Request request) Response
+        +updateSettings(Request request) Response
+    }
+    
+    class CycleController {
+        +index(Request request) Response
+        +store(Request request) Response
+        +show(Request request, int id) Response
+        +update(Request request, int id) Response
+        +destroy(Request request, int id) Response
+        +statistics(Request request) Response
+        +current(Request request) Response
+    }
+    
+    class SymptomController {
+        +categories(Request request) Response
+        +index(Request request) Response
+        +logSymptom(Request request) Response
+        +updateSymptomLog(Request request, int id) Response
+        +deleteSymptomLog(Request request, int id) Response
+        +getLogs(Request request) Response
+        +getCorrelations(Request request) Response
+    }
+    
+    class PredictionController {
+        +getPeriodPredictions(Request request) Response
+        +getFertilityPredictions(Request request) Response
+        +getOvulationPredictions(Request request) Response
+        +submitFeedback(Request request) Response
+        +getPredictionHistory(Request request) Response
+        +getPredictionAccuracy(Request request) Response
+    }
+    
+    class AdminController {
+        +getModels(Request request) Response
+        +getModelDetails(Request request, int id) Response
+        +getModelMetrics(Request request, int id) Response
+        +triggerModelTraining(Request request) Response
+        +activateModel(Request request, int id) Response
+        +getUserStatistics(Request request) Response
+        +getSystemHealth(Request request) Response
+    }
+    
+    %% ML Service Classes in FastAPI
+    class PredictionService {
+        -ARIMAModel arimaModel
+        -RandomForestModel rfModel
+        -GradientBoostingModel gbModel
+        -EnsembleIntegrator ensembleIntegrator
+        +__init__()
+        +predict_period(data dict) dict
+        +predict_fertility(data dict) dict
+        +predict_ovulation(data dict) dict
+        +get_confidence(prediction dict) float
+    }
+    
+    class ARIMAModel {
+        -string version
+        -model model
+        +__init__()
+        +fit(data DataFrame) bool
+        +predict(data DataFrame) dict
+        +evaluate(data DataFrame) dict
+    }
+    
+    class RandomForestModel {
+        -string version
+        -model model
+        -list features
+        +__init__()
+        +fit(data DataFrame) bool
+        +predict(data DataFrame) dict
+        +feature_importance() dict
+        +evaluate(data DataFrame) dict
+    }
+    
+    class GradientBoostingModel {
+        -string version
+        -model model
+        -list features
+        +__init__()
+        +fit(data DataFrame) bool
+        +predict(data DataFrame) dict
+        +feature_importance() dict
+        +evaluate(data DataFrame) dict
+    }
+    
+    class EnsembleIntegrator {
+        -list models
+        -dict weights
+        +__init__()
+        +integrate_predictions(predictions list) dict
+        +adjust_weights(performance dict) bool
+        +get_confidence_score(predictions list) float
+    }
+    
+    class ModelTrainer {
+        -DataPreprocessor preprocessor
+        +__init__()
+        +train_global_model(model_type string) MLModel
+        +train_user_model(user_id int, model_type string) MLModel
+        +validate_model(model MLModel, test_data DataFrame) MLModelMetrics
+        +deploy_model(model MLModel) bool
+    }
+    
+    class DataPreprocessor {
+        +__init__()
+        +preprocess(data DataFrame) DataFrame
+        +normalize_features(data DataFrame) DataFrame
+        +impute_missing(data DataFrame) DataFrame
+        +engineer_features(data DataFrame) DataFrame
+        +split_train_validation(data DataFrame) tuple
+    }
+    
+    %% Relationships
+    User "1" -- "*" UserPreference : has
+    User "1" -- "*" Cycle : logs
+    User "1" -- "1" CycleStatistics : has
+    User "1" -- "*" SymptomLog : logs
+    User "1" -- "*" BiometricLog : logs
+    User "1" -- "*" FertilityLog : logs
+    User "1" -- "*" LifestyleLog : logs
+    User "1" -- "*" Prediction : receives
+    User "1" -- "*" PredictionFeedback : provides
+    User "1" -- "*" MLModel : has personalized
+    
+    Symptom "1" -- "*" SymptomLog : referenced in
+    SymptomCategory "1" -- "*" Symptom : contains
+    
+    Prediction "1" -- "*" PredictionFeedback : receives
+    MLModel "1" -- "*" Prediction : generates
+    MLModel "1" -- "*" MLModelMetrics : has
+    MLModel "1" -- "*" MLModelTrainingJob : created by
+    
+    APIController <|-- UserController : extends
+    APIController <|-- CycleController : extends
+    APIController <|-- SymptomController : extends
+    APIController <|-- PredictionController : extends
+    APIController <|-- AdminController : extends
+    
+    PredictionService o-- ARIMAModel : uses
+    PredictionService o-- RandomForestModel : uses
+    PredictionService o-- GradientBoostingModel : uses
+    PredictionService o-- EnsembleIntegrator : uses
+    
+    ModelTrainer o-- DataPreprocessor : uses
+    ModelTrainer o-- ARIMAModel : trains
+    ModelTrainer o-- RandomForestModel : trains
+    ModelTrainer o-- GradientBoostingModel : trains
+    ModelTrainer o-- EnsembleIntegrator : configures

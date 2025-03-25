@@ -1,0 +1,14 @@
+{
+  "model_id": "model_327eb318",
+  "model_type": "ARIMAModel",
+  "created_at": "2025-03-25T10:13:34.519486",
+  "last_used": "2025-03-25T10:13:34.690688",
+  "metrics": {
+    "mae": 1.5490122693366735,
+    "rmse": 1.7718193902363277,
+    "training_samples": 10,
+    "p": 2,
+    "d": 1,
+    "q": 0
+  }
+}
